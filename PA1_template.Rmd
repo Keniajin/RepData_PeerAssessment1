@@ -1,20 +1,142 @@
-# Reproducible Research: Peer Assessment 1
+---
+author: "Kennedy Mwai"
+output: html_document
+---
+
+"Reproducible Research Assignment 1"
+============================================
+
+This assignment makes use of data from a personal activity monitoring device. This device collects data at 5 minute intervals through out the day. The data consists of two months of data from an anonymous individual collected during the months of October and November, 2012 and include the number of steps taken in 5 minute intervals each day
+
+Data
+---------
+The data for this assignment can be downloaded from the [course web site] (https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip)
+
+The variables included in this dataset are:
+
+    1. steps: Number of steps taking in a 5-minute interval (missing values are coded as NA)
+
+    2. date: The date on which the measurement was taken in YYYY-MM-DD format
+
+    3. interval: Identifier for the 5-minute interval in which measurement was taken
+
+The dataset is stored in a comma-separated-value (CSV) file and there are a total of 17,568 observations in this dataset.
+
+Assignment Solutions
+------------------------
+
+Loading the dataset and the libraries used in the analysis. We also generate a new variable ndate as a date format for date variable
+
+```{r echo=TRUE}
+#load libraries
+library(ggplot2)
+library(lattice)
+library(data.table)
+library(plyr)
+#load the data set
+if (!file.exists("data")) {
+    dir.create("data")
+}
+```
+
+```{r unzip data file}
+if (!file.exists("data/activity.csv")){
+  fileUrl <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip"
+  download.file(fileUrl, destfile = "data/activity.zip")
+  unzip("data/repdata-data-activity.zip")
+}else {message("file is already unzipped")}
+
+```
+
+3. Load data.
+
+```{r load data}
+activity <- read.csv("data/activity.csv" ,header = TRUE, na.string = "NA")
+activity$ndate <- as.Date(activity$date, "%Y-%m-%d")
+```
 
 
-## Loading and preprocessing the data
+### Question 1: What is mean total number of steps taken per day?
+
+For this part of the analysis we ignore the missing values to plot a histogram of the total number of steps taken each day. We also calculate the mean of steps and the median. The key function used is aggregate to make the summaries
+
+```{r echo=TRUE}
+sumData <- aggregate(steps ~ ndate, activity, sum) 
+#mean of steps
+stepsMean<-as.integer(mean(sumData$steps,na.rm = T))
+#median steps
+stepsMedian<-as.integer(median(sumData$steps))
+```
+
+The mean number of steps taken was: `r stepsMean`
+
+The median number of steps taken was: `r stepsMedian`
+
+A histogram of the total number of steps taken each day is shown below and is also saved in the figures folder:
+
+```{r  echo=TRUE, fig.height=3, fig.width=4, fig.align='center'}
+g <- ggplot(sumData, aes(x=steps)) + geom_histogram(binwidth = 1000)
+print(g)
+```
 
 
+### Question 2: What is the average daily activity pattern?
 
-## What is mean total number of steps taken per day?
+To make the daily activity pattern we plot a time series plot of type = "l"of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)
+
+```{r  echo=TRUE}
+stepsInterval<-aggregate(steps~interval,activity, FUN=mean)
+#Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps? 
+intervalMax<-stepsInterval$interval[stepsInterval$steps==max(stepsInterval$steps)]
+```
+
+The  5-minute interval, on average across all the days in the dataset, that contains the maximum number of steps is  `r intervalMax`
+
+The time series plot to show the daily activity pattern is:
+
+```{r echo=TRUE, fig.height=3, fig.width=4,fig.align='center'}
+plot(stepsInterval$interval,stepsInterval$steps,type='l',
+     main='Average daily activity pattern',xlab='Interval in 5 min',
+     ylab='Average number of steps',bty="n")
+```
+
+### Question3: Imputing missing values
+
+There are a number of days/intervals where there are missing values (coded as NA).The presence of missing days may introduce bias into some calculations or summaries of the data. We decided to impute our missing values using the mean of the column. We calculate the mean() of steps and replace the missing values with it.
+Note: we generate a new dataset **activityImputed to contain the imputed values 
+
+```{r echo=TRUE}
+numberNA2<-length(activity[!complete.cases(activity),1])
+activityImputed <- activity
+activityImputed$steps[is.na(activityImputed$steps)] <- mean(activityImputed$steps, na.rm = TRUE)
+sumImputedData <- aggregate(steps ~ ndate, activityImputed, sum) 
+stepsImputedMean<-as.integer(mean(sumImputedData$steps))
+stepsImputtedMedian<-as.integer(median(sumImputedData$steps))
+```
+
+The number of rows with missing values in the dataset are `r numberNA2`. 
+
+The plot below shows the total number of daily steps with the imputed values included. The mean steps with the imputed data was **`r stepsImputedMean`** which is higher than the mean without the imputed values *`r stepsMean`.* The median was the same for both the imputed data and the non imputed data *`r stepsImputtedMedian`*
+
+```{r echo=TRUE, fig.height=3, fig.width=4,fig.align='center'}
+ggplot(sumImputedData, aes(x=steps)) + geom_histogram(binwidth = 1000)
+```
 
 
+### Question 4: Are there differences in activity patterns between weekdays and weekends?
 
-## What is the average daily activity pattern?
+Here we create a factor variable to identify weekends and weekdays. 
 
+```{r echo=TRUE}
+activityImputed$dayOfWeek <-weekdays(activityImputed$ndate)
+activityImputed$timeOfWeek <- "weekDay"
+activityImputed$timeOfWeek[activityImputed$dayOfWeek=="Sunday" | activityImputed$dayOfWeek=="Saturday"  ] <- "weekEnd"
+table(activityImputed$timeOfWeek)
+stepsImputedInterval<-aggregate(steps~interval + timeOfWeek ,activityImputed, FUN=mean)
+```
 
+To show the differences, we make a panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
 
-## Imputing missing values
-
-
-
-## Are there differences in activity patterns between weekdays and weekends?
+```{r echo=TRUE , fig.height=3, fig.width=4,fig.align='center'}
+xyplot(steps~interval|timeOfWeek,stepsImputedInterval,type="l",layout=c(1,2), ylab = "Number Steps", xlab="Interval")
+```
