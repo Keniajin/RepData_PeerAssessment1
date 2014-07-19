@@ -74,7 +74,7 @@ The median number of steps taken was: `r stepsMedian`
 
 A histogram of the total number of steps taken each day is shown below and is also saved in the figures folder:
 
-```{r  echo=TRUE, fig.height=3, fig.width=4, fig.align='center'}
+```{r  echo=TRUE, fig.height=4, fig.width=5, fig.align='center'}
 g <- ggplot(sumData, aes(x=steps)) + geom_histogram(binwidth = 1000)
 print(g)
 ```
@@ -94,7 +94,7 @@ The  5-minute interval, on average across all the days in the dataset, that cont
 
 The time series plot to show the daily activity pattern is:
 
-```{r echo=TRUE, fig.height=3, fig.width=4,fig.align='center'}
+```{r echo=TRUE, fig.height=4, fig.width=5,fig.align='center'}
 plot(stepsInterval$interval,stepsInterval$steps,type='l',
      main='Average daily activity pattern',xlab='Interval in 5 min',
      ylab='Average number of steps',bty="n")
@@ -118,7 +118,7 @@ The number of rows with missing values in the dataset are `r numberNA2`.
 
 The plot below shows the total number of daily steps with the imputed values included. The mean steps with the imputed data was **`r stepsImputedMean`** which is higher than the mean without the imputed values *`r stepsMean`.* The median was the same for both the imputed data and the non imputed data *`r stepsImputtedMedian`*
 
-```{r echo=TRUE, fig.height=3, fig.width=4,fig.align='center'}
+```{r echo=TRUE, fig.height=4, fig.width=5,fig.align='center'}
 ggplot(sumImputedData, aes(x=steps)) + geom_histogram(binwidth = 1000)
 ```
 
@@ -137,6 +137,6 @@ stepsImputedInterval<-aggregate(steps~interval + timeOfWeek ,activityImputed, FU
 
 To show the differences, we make a panel plot containing a time series plot of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis).
 
-```{r echo=TRUE , fig.height=3, fig.width=4,fig.align='center'}
+```{r echo=TRUE , fig.height=4, fig.width=5,fig.align='center'}
 xyplot(steps~interval|timeOfWeek,stepsImputedInterval,type="l",layout=c(1,2), ylab = "Number Steps", xlab="Interval")
 ```
